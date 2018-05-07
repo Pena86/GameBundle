@@ -30,12 +30,22 @@ class Game:
     name = 'entangled'
 
     def __init__(self):
-        self.rectsAmmount = 200
+        self.rectsAmmount = 20
 
 
         self.blockSize = 14
         self.gridSize = self.blockSize /2 +1
 
+        self.colorPalette = {
+            'intersecting' : pygame.color.Color('Brown'),
+            'nonintersecting' : pygame.color.Color('Lime Green'),
+            'selected' : pygame.color.Color('White'),
+            'selectedConnecting' : pygame.color.Color('Blue'),
+            'marked' : pygame.color.Color('Blue'),
+            'markedConnecting' : pygame.color.Color('White'),
+            'background' : pygame.color.Color('Dim Gray'),
+            'line' : pygame.color.Color('Black'),
+        }
 
         self.selected = None
         self.mark = None
@@ -58,7 +68,7 @@ class Game:
             self.rects.append( [pygame.Rect(self.myRound(20),#random.randint(0, SCREEN_WIDTH - self.blockSize), 
                         self.myRound(20),#random.randint(0, SCREEN_HEIGHT - self.blockSize), 
                         self.blockSize, self.blockSize),
-                        [], [], 'Brown'
+                        [], [], self.colorPalette['intersecting']
             ])
 
         for x in range(len(self.rects)):
@@ -90,12 +100,12 @@ class Game:
         '''
         return int(self.gridSize * round(float(x)/self.gridSize))
 
-    def testSegmentintercet(self, i, c):
+    def testSegmentIntercet(self, i, c):
         collides = False
-        for j in range(0, len(self.rects)):
-            for d in self.rects[j][1] + self.rects[j][2]:
+        for j in range(0, len(self.rects)): # other nodes...
+            for d in self.rects[j][1] + self.rects[j][2]: #... ande their connections
                 #print (i, c, j, d)
-                if j == i or j == c or d == i or d == c:
+                if j == i or j == c or d == i or d == c: # but not the node or its connections itself
                     pass
                 elif det.doIntersect(self.rects[i][0], self.rects[c][0], self.rects[j][0], self.rects[d][0]):
                     return True
@@ -158,7 +168,7 @@ class Game:
                     while connections and tries:
                         connection = random.randint(max(0, currNode - int(groupMembers*1.5)), currNode-2)
                         if connection != currNode and not connection in rects[currNode][1] and \
-                                not self.testSegmentintercet(currNode, connection):
+                                not self.testSegmentIntercet(currNode, connection):
                             rects[currNode][1].append(connection)
                             rects[connection][2].append(currNode)
                             connections -= 1
@@ -176,7 +186,7 @@ class Game:
                 while connections and tries:
                     connection = random.randint(0, len(rects)-1)
                     if connection != currNode and not connection in rects[currNode][1] and \
-                            not self.testSegmentintercet(currNode, connection):
+                            not self.testSegmentIntercet(currNode, connection):
                         rects[currNode][1].append(connection)
                         rects[connection][2].append(currNode)
                         connections -= 1
@@ -258,8 +268,8 @@ class Game:
             if event.button == 1 and self.selected is not None:
                 self.rects[self.selected][0].x = self.myRound(self.rects[self.selected][0].x)
                 self.rects[self.selected][0].y = self.myRound(self.rects[self.selected][0].y)
+                self.tileMoved = self.selected
                 self.selected = None
-                self.tileMoved = True
 
         elif event.type == pygame.MOUSEMOTION:
             if self.selected is not None: # selected can be `0` so `is not None` is required
@@ -273,67 +283,89 @@ class Game:
         self.buildNodesAnimation(self.rects)
 
         if self.selfSolveCountdown:
-            x = self.rects[self.selfSolveOrder[self.selfSolveIndex]][0].x
-            y = self.rects[self.selfSolveOrder[self.selfSolveIndex]][0].y
-            for r in self.rects[self.selfSolveOrder[self.selfSolveIndex]][1] + self.rects[self.selfSolveOrder[self.selfSolveIndex]][2]:
+            nodeToMove = self.selfSolveOrder[self.selfSolveIndex]
+            x = self.rects[nodeToMove][0].x
+            y = self.rects[nodeToMove][0].y
+            for r in self.rects[nodeToMove][1] + self.rects[nodeToMove][2]:
                 x += self.rects[r][0].x
                 y += self.rects[r][0].y
-            total = 1 + len(self.rects[self.selfSolveOrder[self.selfSolveIndex]][1] + self.rects[self.selfSolveOrder[self.selfSolveIndex]][2])
-            self.rects[self.selfSolveOrder[self.selfSolveIndex]][0].topleft = (int(x/total), int(y/total))
+            total = 1 + len(self.rects[nodeToMove][1] + self.rects[nodeToMove][2])
+            self.rects[nodeToMove][0].topleft = (int(x/total), int(y/total))
 
             self.selfSolveIndex += 1
             if self.selfSolveIndex == len (self.selfSolveOrder):
                 self.selfSolveIndex = 0
                 self.selfSolveCountdown -= 1
                 random.shuffle(self.selfSolveOrder)
-            self.tileMoved = True
+            self.tileMoved = nodeToMove
 
-        if self.tileMoved:
+        if self.tileMoved == True: # test all nodes for intersecting
             self.tileMoved = False
             for i in range(0, len(self.rects)): # a node ...
-                self.rects[i][3] = 'Lime Green'
-                collides = False
+                self.rects[i][3] = self.colorPalette['nonintersecting']
                 for c in self.rects[i][1] + self.rects[i][2]: # ...has connections to
-                    # print (i, c)
-                    for j in range(0, len(self.rects)): # other nodes...
-                        for d in self.rects[j][1] + self.rects[j][2]: #... ande their connections
-                            # print (i, c, j, d)
-                            if j == i or j == c or d == i or d == c: # but not the node or its connections itself
-                                # print ("one of own")
-                                pass
-
-                            elif det.doIntersect(self.rects[i][0], self.rects[c][0], self.rects[j][0], self.rects[d][0]): # test if collides
-                                collides = True
-                                self.rects[i][3] = 'Brown'
-                                # print ("collides")
-                                break
-                        if collides:
-                            break
-                    if collides:
+                    if self.testSegmentIntercet(i, c):
+                        self.rects[i][3] = self.colorPalette['intersecting']
+                        # print ("ALL collides", i, c)
                         break
 
+
+        if self.tileMoved: # test only moved node ...
+            i = self.tileMoved # this node
+            self.tileMoved = False
+            self.rects[i][3] = self.colorPalette['nonintersecting']
+            for c in self.rects[i][1] + self.rects[i][2]: # ...has connections to
+                # print (i, c)
+                for j in range(0, len(self.rects)): # other nodes...
+                    for d in self.rects[j][1] + self.rects[j][2]: #... ande their connections
+                        # print (i, c, j, d)
+                        if j == i or j == c or d == i or d == c: # but not the node or its connections itself
+                            # print ("one of own")
+                            pass
+
+                        elif det.doIntersect(self.rects[i][0], self.rects[c][0], self.rects[j][0], self.rects[d][0]): # test if collides
+                            self.rects[i][3] = self.colorPalette['intersecting']
+                            self.rects[c][3] = self.colorPalette['intersecting']
+                            self.rects[j][3] = self.colorPalette['intersecting']
+                            self.rects[d][3] = self.colorPalette['intersecting']
+                            # print ("ONLY collides", i, c)
+
+            # test if previously intersection node still collides
+            for i in range(0, len(self.rects)): # a node ...
+                collides = False
+                if self.rects[i][3] == self.colorPalette['intersecting']:
+                    for c in self.rects[i][1] + self.rects[i][2]: # ...has connections to
+                        if self.testSegmentIntercet(i, c):
+                            collides = True
+                            # print ("PREV collides", i, c)
+                            break
+                if collides:
+                    self.rects[i][3] = self.colorPalette['intersecting']
+                else:
+                    self.rects[i][3] = self.colorPalette['nonintersecting']
+
     def draw(self, screen):
-        screen.fill(pygame.color.Color('Dim Gray'))
+        screen.fill(self.colorPalette['background'])
 
         # draw rect
         for r in self.rects:
             for l in r[1]:
-                pygame.draw.line(screen, pygame.color.Color('BLACK'), r[0].center, self.rects[l][0].center, 2)
+                pygame.draw.line(screen, self.colorPalette['line'], r[0].center, self.rects[l][0].center, 2)
         for i, r in enumerate(self.rects):
-            pygame.draw.circle(screen, pygame.color.Color(r[3]), r[0].center, int(self.blockSize/2))
-            #textToScreen(screen, i, r[0].x, r[0].y, 20, BLACK)
+            pygame.draw.circle(screen, r[3], r[0].center, int(self.blockSize/2))
+            #textToScreen(screen, i, r[0].x, r[0].y, 20, self.colorPalette['line'])
 
         # draw selected in its color
         if self.selected is not None:
-            pygame.draw.circle(screen, pygame.color.Color('WHITE'), self.rects[self.selected][0].center, int(self.blockSize/2))
+            pygame.draw.circle(screen, self.colorPalette['selected'], self.rects[self.selected][0].center, int(self.blockSize/2))
             for r in self.rects[self.selected][1] + self.rects[self.selected][2]:
-                pygame.draw.circle(screen, pygame.color.Color('BLUE'), self.rects[r][0].center, int(self.blockSize/2))
+                pygame.draw.circle(screen, self.colorPalette['selectedConnecting'], self.rects[r][0].center, int(self.blockSize/2))
 
         # draw marked with a ring
         if self.mark is not None:
-            pygame.draw.circle(screen, pygame.color.Color('BLUE'), self.rects[self.mark][0].center, int(self.blockSize/2), 2)
+            pygame.draw.circle(screen, self.colorPalette['marked'], self.rects[self.mark][0].center, int(self.blockSize/2), 2)
             for r in self.rects[self.mark][1] + self.rects[self.mark][2]:
-                pygame.draw.circle(screen, pygame.color.Color('WHITE'), self.rects[r][0].center, int(self.blockSize/2), 2)
+                pygame.draw.circle(screen, self.colorPalette['markedConnecting'], self.rects[r][0].center, int(self.blockSize/2), 2)
 
         pygame.display.update()
         self.clock.tick(25)
