@@ -6,6 +6,9 @@ import pygame
 from pygame.locals import *
 import time
 
+import sys, os
+sys.path.append(os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ))
+
 from data.textToScreen import textToScreen
 from data.gameMenu import MenuContainer, MenuItem
 from data.highScore import HighScore
@@ -117,7 +120,7 @@ class Game:
         self.startMenu.draw(surface)
         self.endMenu.draw(surface)
 
-    def on_loop(self):
+    def gameLoop(self):
         pygame.event.pump()
         keys = pygame.key.get_pressed()
 
@@ -149,7 +152,7 @@ class Game:
         if self.gameState == RUN and self.board.getGameState() == END:
             self.endGame()
 
-    def on_event(self, event):
+    def gameEvent(self, event):
         if event.type == MOUSEBUTTONDOWN:
             self.board.on_event(event)
             self.gameMenu.onMouseClick()
@@ -190,3 +193,24 @@ class Game:
 
     def getRunningState(self):
         return self._running
+
+if __name__ == "__main__" :
+    pygame.init()
+    screen = pygame.display.set_mode((800, 600))
+    screen_rect = screen.get_rect()
+    clock = pygame.time.Clock()
+    game = Game()
+    running = True
+    try:
+        while( running and game.getRunningState() ):
+            for event in pygame.event.get():
+                game.gameEvent(event)
+
+            game.gameLoop()
+            game.draw(screen)
+            pygame.display.flip()
+            clock.tick(25)
+
+    except KeyboardInterrupt:
+        running = False
+    pygame.quit()

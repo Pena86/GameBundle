@@ -29,7 +29,7 @@ SCREEN_HEIGHT = 600
 class Game:
     name = 'entangled'
 
-    def __init__(self):
+    def __init__(self, clock = None):
         self.rectsAmmount = 20
 
 
@@ -51,7 +51,7 @@ class Game:
         self.mark = None
         self.tileMoved = True
 
-        self.clock = pygame.time.Clock()
+        self.clock = clock
         self.is_running = True
 
         self.selfSolveCountdown = 0
@@ -205,7 +205,7 @@ class Game:
                 self.mark = None
 
     # --- events ---
-    def on_event(self, event):
+    def gameEvent(self, event):
         if event.type == pygame.QUIT:
             self.is_running = False
  
@@ -277,7 +277,7 @@ class Game:
                 self.rects[self.selected][0].x = self.myRound(event.pos[0] + self.selected_offset_x)
                 self.rects[self.selected][0].y = self.myRound(event.pos[1] + self.selected_offset_y)
 
-    def on_loop(self):
+    def gameLoop(self):
         # --- updates ---
 
         self.buildNodesAnimation(self.rects)
@@ -367,22 +367,23 @@ class Game:
             for r in self.rects[self.mark][1] + self.rects[self.mark][2]:
                 pygame.draw.circle(screen, self.colorPalette['markedConnecting'], self.rects[r][0].center, int(self.blockSize/2), 2)
 
-        pygame.display.update()
-        self.clock.tick(25)
-
 if __name__ == "__main__" :
     pygame.init()
+    pygame.display.set_caption('Untangle')
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     screen_rect = screen.get_rect()
-    game = Game()
+    clock = pygame.time.Clock()
+    game = Game(clock)
     running = True
     try:
         while( running and game.getRunningState() ):
             for event in pygame.event.get():
-                game.on_event(event)
+                game.gameEvent(event)
 
-            game.on_loop()
+            game.gameLoop()
             game.draw(screen)
+            pygame.display.update()
+            clock.tick(25)
 
     except KeyboardInterrupt:
         running = False

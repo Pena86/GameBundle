@@ -7,6 +7,7 @@ import pygame
 from pygame.locals import *
 
 from games.colorFlood import Game
+#from games.untangle import Game
 
 class App:
  
@@ -48,12 +49,11 @@ class App:
     def on_event(self, event):
         if event.type == QUIT:
             self._running = False
-        elif event.type == MOUSEBUTTONDOWN:
-            # self.board.on_event(event)
-            self.game.on_event(event)
+        # self.board.on_event(event)
+        self.game.gameEvent(event)
  
     def on_loop(self):
-        self.game.on_loop()
+        self.game.gameLoop()
 
         if self.game.getRunningState() == False:
             self._running = False
@@ -61,7 +61,7 @@ class App:
     def on_render(self):
         self._display_surf.fill((0,0,0))
         # self.board.draw(self._display_surf, self._image_surf)
-        self.game.draw(self._display_surf, self._image_surf)
+        self.game.draw(self._display_surf)
         pygame.display.flip()
         # print (self._clock.get_fps())
  
