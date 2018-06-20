@@ -598,4 +598,4 @@ if __name__ == "__main__" :
         running = False
     print("\nGoodbye\n")
     pygame.quit()
-    ### TODO: game endstate
+    ### TODO: screenshots, git repo and readme, spinoff, git version pole
